@@ -93,3 +93,21 @@ _Requires environment variables `OWNER_ACCOUNT_PRIVATE_KEY` and `COLLECTION_CONT
 ```sh
 npm run onboarding:add-metadata-schema
 ```
+
+## 5. Bulk user registration 
+
+Create you own Gorli Infura API Key https://app.infura.io/ for L1 to create the test wallets
+
+Pass you key into your .env file under ```process.env.INFURA_URL_GOERLI``` 
+
+Update your total wallet count on line 13 ```./src/onboarding/5-bulk-user-registration.ts``` 
+
+```js
+for (let i = 1; i < 5; i++) {
+```
+
+```sh
+npm run onboarding:bulk-user-registration
+```
+
+Running this script will save your wallet amount to a csv file named ```wallets.csv``` including the index, wallet address and private key. 
