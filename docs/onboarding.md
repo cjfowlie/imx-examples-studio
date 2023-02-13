@@ -103,7 +103,7 @@ Pass you key into your .env file under ```process.env.INFURA_URL_GOERLI```
 Update your total wallet count on line 13 ```./src/onboarding/5-bulk-user-registration.ts``` 
 
 ```js
-for (let i = 1; i < 5; i++) {
+for (let i = 1; i < 5; i++)
 ```
 
 ```sh
@@ -111,3 +111,20 @@ npm run onboarding:bulk-user-registration
 ```
 
 Running this script will save your wallet amount to a csv file named ```wallets.csv``` including the index, wallet address and private key. 
+
+## 6. Bulk token transfer
+
+Make sure you have all your variables in your .env file updated locally. 
+
+`process.env.OWNER_ACCOUNT_PRIVATE_KEY` is the key to the wallet you would like to transfer funds from to all wallets. 
+
+Update line 26 with your chosen amount of ETH 
+```js
+const withdrawAmount = '1000000000000000';
+``` 
+
+Update line 68 with the number of wallet address pulled from the wallets.csv file to be funded.
+
+```js
+const transfers = results.slice(0, 2).map
+```
