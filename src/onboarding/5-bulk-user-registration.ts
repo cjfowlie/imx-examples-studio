@@ -3,41 +3,30 @@ import { Wallet } from '@ethersproject/wallet';
 import { ImLogger, WinstonLogger } from '@imtbl/imlogging';
 import { ImmutableXClient } from '@imtbl/imx-sdk';
 const Web3 = require('web3');
-var fs = require('fs');
+const fs = require('fs/promises');
 
 import env from '../config/client';
 import { loggerConfig } from '../config/logging';
 
-fs.appendFileSync('wallets.csv', 'id,address,private_key\r\n');
+const web3Provider = new Web3.providers.HttpProvider(process.env.INFURA_URL_GOERLI);
+const web3 = new Web3(web3Provider);
+const provider = new AlchemyProvider(env.ethNetwork, env.alchemyApiKey);
+const log = new WinstonLogger(loggerConfig);
 
-for (let i = 1; i < 5; i++) {
-  //Create wallet
-  const web3Provider = new Web3.providers.HttpProvider(
-    process.env.INFURA_URL_GOERLI,
-  );
-  const web3 = new Web3(web3Provider);
+async function createAndRegisterWallet(i: number) {
+  // Create wallet
   const newAccount = web3.eth.accounts.create();
-  console.log(newAccount);
 
-  const obj = JSON.stringify(newAccount);
-  console.log(obj);
-
-  //Store wallet key and Private Key
-  const walletID = newAccount.address;
-  const walletKey = newAccount.privateKey;
+  // Store wallet key and Private Key
+  const { address: walletID, privateKey: walletKey } = newAccount;
 
   // Register with IMX
-  const provider = new AlchemyProvider(env.ethNetwork, env.alchemyApiKey);
-  const log: ImLogger = new WinstonLogger(loggerConfig);
-
   const component = '[IMX-USER-REGISTRATION]';
 
-  (async (): Promise<void> => {
-    const privateKey = walletKey;
-
+  try {
     const user = await ImmutableXClient.build({
       ...env.client,
-      signer: new Wallet(privateKey).connect(provider),
+      signer: new Wallet(walletKey).connect(provider),
     });
 
     log.info(component, 'Registering user...');
@@ -67,12 +56,26 @@ for (let i = 1; i < 5; i++) {
       log.info(component, 'User has been created', user.address);
     }
     console.log(JSON.stringify({ newUser, existingUser }, null, 2));
-  })().catch(e => {
-    log.error(component, e);
-    process.exit(1);
-  });
 
-  //id,address,key
-  fs.appendFileSync('wallets.csv', + i + "," + walletID + "," + walletKey);
-  fs.appendFileSync('wallets.csv', '\r\n');
+    // Save wallet ID and private key to file
+    await fs.appendFile('wallets.csv', `${i},${walletID},${walletKey}\r\n`);
+  } catch (error) {
+    console.log("Error completing signing" + error)
+    process.exit(1);
+  }
 }
+
+async function main() {
+  await fs.writeFile('wallets.csv', 'id,address,private_key\r\n');
+
+  const promises = [];
+  for (let i = 1; i < 5; i++) {
+    promises.push(createAndRegisterWallet(i));
+  }
+  await Promise.all(promises);
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exit(1);
+});
